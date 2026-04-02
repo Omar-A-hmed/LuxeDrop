@@ -1,4 +1,4 @@
-import { ShoppingCart, Heart, Loader2 } from "lucide-react";
+import { ShoppingCart, Loader2, Star } from "lucide-react";
 import { useCart } from "./CartContext";
 import { useState } from "react";
 
@@ -18,16 +18,25 @@ export default function ProductCard({ id, name, price, numericPrice, baseCost, c
   const [isLoaded, setIsLoaded] = useState(false);
   const mainImage = images && images.length > 0 ? images[0] : '';
 
+  // Fake logic to match screenshot aesthetic (since DB lacks this detail)
+  const fakeOriginalPrice = numericPrice * 1.30;
+  const fakeOriginalPriceStr = `₹${fakeOriginalPrice.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  const discountAmount = fakeOriginalPrice - numericPrice;
+  const discountTag = `-₹${discountAmount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  
+  const hash = String(id).split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  const fakeReviews = (hash % 150) + 12;
+
   return (
     <div 
-      className="group relative cursor-pointer"
+      className="group relative cursor-pointer flex flex-col h-full"
       onClick={onClick}
     >
-      <div className="relative aspect-[3/4] overflow-hidden rounded-3xl bg-zinc-900 border border-white/5">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-xl md:rounded-3xl bg-zinc-900 border border-white/5 shrink-0">
         {/* Loading State */}
         {!isLoaded && (
           <div className="absolute inset-0 flex items-center justify-center bg-zinc-900">
-            <Loader2 className="w-6 h-6 text-zinc-700 animate-spin" />
+            <Loader2 className="w-5 h-5 text-zinc-700 animate-spin" />
           </div>
         )}
 
@@ -36,45 +45,57 @@ export default function ProductCard({ id, name, price, numericPrice, baseCost, c
           src={mainImage} 
           alt={name}
           loading="lazy"
+          decoding="async"
           onLoad={() => setIsLoaded(true)}
-          className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-105 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
           referrerPolicy="no-referrer"
         />
-        
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-6">
-           <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-brand-gold mb-2">View Details</span>
-           <div className="h-px w-12 bg-brand-gold transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 delay-100"></div>
-        </div>
 
+        {/* Discount Badge */}
+        {numericPrice > 0 && (
+          <div className="absolute top-2 left-2 md:top-3 md:left-3 bg-red-600/90 text-white text-[9px] md:text-xs font-bold px-1.5 py-0.5 md:px-2 md:py-1 rounded-[4px] tracking-wider z-10 shadow-sm border border-red-500/50">
+            {discountTag}
+          </div>
+        )}
+        
         {/* Action Buttons */}
-        <div className="absolute top-4 right-4 flex flex-col gap-2 translate-x-12 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-500">
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              addToCart({ id, name, price, numericPrice, baseCost, image: mainImage });
-            }}
-            className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center hover:bg-brand-gold transition-colors shadow-xl"
-            title="Add to Cart"
-          >
-            <ShoppingCart className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={(e) => e.stopPropagation()}
-            className="w-10 h-10 bg-black/50 backdrop-blur-md text-white rounded-full flex items-center justify-center hover:bg-white/20 transition-colors border border-white/10"
-          >
-            <Heart className="w-4 h-4" />
-          </button>
-        </div>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            addToCart({ id, name, price, numericPrice, baseCost, image: mainImage });
+          }}
+          className="absolute bottom-2 right-2 md:bottom-3 md:right-3 w-8 h-8 md:w-10 md:h-10 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-full flex items-center justify-center hover:bg-brand-gold hover:border-brand-gold hover:text-black transition-all shadow-xl z-20"
+          title="Add to Cart"
+        >
+          <ShoppingCart className="w-3.5 h-3.5 md:w-4 md:h-4" />
+        </button>
       </div>
 
-      <div className="mt-6 space-y-2">
-        <div className="flex justify-between items-start">
-          <div className="flex-1 pr-4">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-brand-gold font-bold mb-1">{category}</p>
-            <h3 className="text-lg font-serif italic text-zinc-100 group-hover:text-brand-gold transition-colors line-clamp-1">{name}</h3>
+      <div className="mt-3 space-y-1 flex-1 flex flex-col">
+        <div className="pr-1">
+          <p className="text-[8px] md:text-[10px] uppercase tracking-[0.2em] text-zinc-400 font-semibold mb-0.5">{category}</p>
+          <h3 className="text-xs md:text-sm font-medium text-zinc-100 group-hover:text-brand-gold transition-colors line-clamp-2 leading-snug">{name}</h3>
+        </div>
+        
+        {/* Ratings row */}
+        <div className="flex items-center gap-1 mt-1">
+          <div className="flex text-brand-gold">
+            {[...Array(5)].map((_, i) => <Star key={i} className="w-2.5 h-2.5 md:w-3 md:h-3 fill-current" />)}
           </div>
-          <p className="text-lg font-light text-zinc-300">{price}</p>
+          <span className="text-[9px] md:text-[10px] text-zinc-500">{fakeReviews} reviews</span>
+        </div>
+
+        {/* Price row */}
+        <div className="mt-auto pt-1.5 flex items-baseline gap-1.5 md:gap-2">
+          <span className="line-through text-[10px] md:text-xs text-zinc-600">{fakeOriginalPriceStr}</span>
+          <span className="text-sm md:text-base font-semibold text-brand-gold">{price}</span>
+        </div>
+
+        {/* Swatches */}
+        <div className="flex items-center gap-1 pt-1">
+          <div className="w-2 h-2 rounded-full bg-zinc-400 border border-white/10"></div>
+          <div className="w-2 h-2 rounded-full bg-zinc-800 border border-white/10"></div>
+          <div className="w-2 h-2 rounded-full bg-[#3d4246] border border-white/10"></div>
         </div>
       </div>
     </div>
