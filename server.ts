@@ -8,18 +8,24 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import admin from "firebase-admin";
 import fs from "fs";
+import { getFirestore } from "firebase-admin/firestore";
 
 // Initialize Firebase Admin
 let db: FirebaseFirestore.Firestore;
 try {
   const serviceAccountContent = fs.readFileSync(path.join(process.cwd(), "serviceAccountKey.json"), "utf8");
   const serviceAccount = JSON.parse(serviceAccountContent);
+  
+  const appletConfigContent = fs.readFileSync(path.join(process.cwd(), "firebase-applet-config.json"), "utf8");
+  const appletConfig = JSON.parse(appletConfigContent);
+
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
   });
-  db = admin.firestore();
+  
+  db = getFirestore(admin.app(), appletConfig.firestoreDatabaseId || "(default)");
 } catch (error) {
-  console.warn("Warning: Could not find or parse serviceAccountKey.json. Firebase admin features will fail.");
+  console.warn("Warning: Could not configure Firebase admin. Check your service account or config files.");
 }
 
 const MARKUP_MULTIPLIER = 1.60;
