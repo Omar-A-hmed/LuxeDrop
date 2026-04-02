@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A product available in the store",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the product" },
+        "baseCost": { "type": "number", "description": "The base cost of the product in INR" },
+        "category": { "type": "string", "description": "The category of the product" },
+        "images": { 
+          "type": "array", 
+          "items": { "type": "string" },
+          "description": "URLs of the product images" 
+        },
+        "isNew": { "type": "boolean", "description": "Whether the product is new" },
+        "isLimited": { "type": "boolean", "description": "Whether the product is limited edition" }
+      },
+      "required": ["name", "baseCost", "category", "images"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "The user's email address" },
+        "role": { "type": "string", "description": "The user's role (e.g., admin, customer)" }
+      },
+      "required": ["email", "role"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A customer order",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "customerAddress": { "type": "string" },
+        "items": { "type": "array", "items": { "type": "object" } },
+        "totalAmount": { "type": "number" },
+        "baseCostTotal": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "paid", "ordered_from_supplier", "shipped", "delivered"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "paymentScreenshot": { "type": "string", "description": "URL to the payment confirmation screenshot" }
+      },
+      "required": ["customerName", "customerEmail", "items", "totalAmount", "status", "createdAt"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Store-wide settings",
+      "type": "object",
+      "properties": {
+        "upiId": { "type": "string", "description": "The owner's UPI ID for payments" },
+        "bankDetails": { "type": "string", "description": "The owner's bank details" },
+        "storeName": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Collection of all products in the store"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Collection of all users"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Collection of all orders"
+    },
+    "/settings/store": {
+      "schema": { "$ref": "#/entities/Settings" },
+      "description": "Store-wide settings document"
+    }
+  }
+}

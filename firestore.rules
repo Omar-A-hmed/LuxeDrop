@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        (request.auth.token.email == "omar.ahmed2k6@gmail.com" && request.auth.token.email_verified == true) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'baseCost', 'category', 'images']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 200 &&
+             data.baseCost is number && data.baseCost >= 0 &&
+             data.category is string && data.category.size() > 0 && data.category.size() < 100 &&
+             data.images is list && data.images.size() > 0 && data.images.size() < 10 &&
+             (!('isNew' in data) || data.isNew is bool) &&
+             (!('isLimited' in data) || data.isLimited is bool);
+    }
+
+    match /products/{productId} {
+      // Anyone can read products
+      allow read: if true;
+      // Temporarily allow creates and deletes for the cleanup/import script
+      allow create: if true;
+      allow update: if isAdmin() && isValidProduct(request.resource.data);
+      allow delete: if true;
+    }
+
+    match /users/{userId} {
+      // Users can read their own profile, admins can read all
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // Only admins can create/update users (or user can create their own profile as 'customer')
+      allow create: if isAuthenticated() && request.auth.uid == userId && 
+                    request.resource.data.keys().hasAll(['email', 'role']) &&
+                    request.resource.data.email == request.auth.token.email &&
+                    (request.resource.data.role == 'customer' || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      // Anyone can get their order if they know the exact ID
+      allow get: if true;
+      // Only admins can list, create, update, or delete orders
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      // Anyone can read store settings (to see UPI ID)
+      allow read: if true;
+      // Only admins can update settings
+      allow write: if isAdmin();
+    }
+  }
+}
